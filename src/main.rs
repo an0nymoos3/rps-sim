@@ -5,10 +5,8 @@ mod world;
 use crate::world::SimWorld;
 
 fn main() {
-    let world: SimWorld = SimWorld::new();
+    let mut world: SimWorld = SimWorld::new();
 
-    // Testing loop
-    for _ in 0..10 {
-        world.simulate_one_cycle();
-    }
+    world.populate(1_000_000);
+    world.run_sim();
 }

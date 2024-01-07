@@ -2,7 +2,12 @@
 name = "rps-sim"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+license-file = "LICENSE.txt"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+serde = { version = "1.0", features = ["derive"] }
+egui = "0.24.1"
+rand = "0.8.5"
