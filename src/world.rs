@@ -3,7 +3,7 @@ use std::time::Instant;
 
 /// Struct representing the world used for the simulation.
 pub struct SimWorld {
-    units: Vec<Unit>,
+    units: Vec<Box<Unit>>,
     last_update: Instant,
 }
 
@@ -23,7 +23,7 @@ impl SimWorld {
     /// Populate world for simulation.
     pub fn populate(&mut self, population: i32) {
         for _ in 0..population {
-            let unit: Unit = Unit::new();
+            let unit: Box<Unit> = Unit::new();
             self.units.push(unit);
         }
     }

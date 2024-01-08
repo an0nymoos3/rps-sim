@@ -28,8 +28,8 @@ pub struct Unit {
 }
 
 impl Unit {
-    /// Returns new Units
-    pub fn new() -> Self {
+    /// Heap allocates a new Unit and returns a pointer (-> Box<Unit>)
+    pub fn new() -> Box<Self> {
         let mut rng: ThreadRng = rand::thread_rng();
         
         // Randomize coordinates
@@ -52,7 +52,7 @@ impl Unit {
             UnitType::None => UnitType::None,
         };
 
-        Self { coordinates: Point { x: x, y: y }, unit_type: unit_type, prey: prey, speed: 1.0, size: 20.0 }
+        Box::new(Self { coordinates: Point { x: x, y: y }, unit_type: unit_type, prey: prey, speed: 1.0, size: 20.0 })
     }
 
     /// Moves the unit towards another Unit.
