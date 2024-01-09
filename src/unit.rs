@@ -11,30 +11,30 @@ pub enum UnitType {
 }
 
 /// Struct used as a coordinate.
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct Point {
-    x: f32,
-    y: f32,
+    pub x: f32,
+    pub y: f32,
 }
 
-/// Struct representing a Unit/Character
-#[derive(Clone, Copy)]
+/// Struct representing a Unit/Character.
+#[derive(Clone)]
 pub struct Unit {
-    coordinates: Point,
+    pub coordinates: Point,
     pub unit_type: UnitType,
     pub prey: UnitType,
     speed: f32,
-    size: f32,
+    pub size: f32,
 }
 
 impl Unit {
     /// Heap allocates a new Unit and returns a pointer (-> Box<Unit>)
-    pub fn new() -> Box<Self> {
+    pub fn new(max_x: f32, max_y: f32) -> Box<Self> {
         let mut rng: ThreadRng = rand::thread_rng();
         
         // Randomize coordinates
-        let x: f32 = rng.gen_range(0.0..1260.0);
-        let y: f32 = rng.gen_range(0.0..700.0);
+        let x: f32 = rng.gen_range(0.0..max_x - 20.0); // 20.0 = size of unit
+        let y: f32 = rng.gen_range(0.0..max_y - 20.0); // 20.0 = size of unit
 
         // Randomize unit type
         let unit_type: UnitType = match rng.gen_range(0..3) {
@@ -55,8 +55,32 @@ impl Unit {
         Box::new(Self { coordinates: Point { x: x, y: y }, unit_type: unit_type, prey: prey, speed: 1.0, size: 20.0 })
     }
 
+    /// Runs an update cycle on Unit.
+    pub fn update(&mut self, dt: u128, others: &Vec<Box<Unit>>) {
+        let mut nearest: Option<&Box<Unit>> = None;
+        let mut nearest_distance: f32 = f32::MAX;
+        
+        for unit in others {
+            if unit.prey == self.unit_type {
+                let distance: f32 = self.distance_to(&unit);
+                
+                if distance < nearest_distance {
+                    nearest = Some(unit);
+                    nearest_distance = distance;
+                }
+            }
+        }
+
+        // Update position
+        if let Some(other) = nearest {
+            self.move_to(other, dt);
+        }
+        // Check whether self should change UnitType.
+        self.check_switch(others);
+    }
+
     /// Moves the unit towards another Unit.
-    pub fn move_to(&mut self, other: &Unit, dt: u128) {
+    fn move_to(&mut self, other: &Unit, dt: u128) {
         let dx: f32 = other.coordinates.x - self.coordinates.x;
         let dy: f32 = other.coordinates.y - self.coordinates.y;
         let length: f32 = (dx.powf(2.0) + dy.powf(2.0)).sqrt();
@@ -65,12 +89,12 @@ impl Unit {
         self.coordinates.y += dy / length * self.speed * (dt / 1_000_000_000) as f32;
     }
 
-    /// Attempts to attack another Unit.
-    pub fn try_attack(&self, units: &mut Vec<Unit>) {
+    /// Checks if self is overlapping with a predator and switches UnitType if true
+    fn check_switch(&mut self, units: &Vec<Box<Unit>>) {
         for unit in units {
-            if self.overlaps_with(unit) {
-                if unit.unit_type == self.prey {
-                    unit.switch_to(self.unit_type);
+            if unit.prey == self.unit_type {
+                if self.overlaps_with(unit) {
+                    self.switch_to(unit.prey);
                 }
             }
         }
