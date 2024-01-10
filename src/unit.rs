@@ -1,5 +1,21 @@
+use fltk::prelude::ImageExt;
 use rand::Rng;
 use rand::rngs::ThreadRng;
+use fltk::image::PngImage;
+
+#[derive(Clone)]
+pub struct Asset {
+    pos: Point,
+    size: i32,
+    image: PngImage
+}
+
+impl Asset {
+    /// Draw Unit Asset to screen.
+    pub fn draw(&mut self) {
+        self.image.draw_ext(self.pos.x as i32, self.pos.y as i32, self.size, self.size, 0, 0)
+    }
+}
 
 /// Different types of Units
 #[derive(Clone, Copy, PartialEq)]
@@ -25,6 +41,7 @@ pub struct Unit {
     pub prey: UnitType,
     speed: f32,
     pub size: f32,
+    pub asset: Asset,
 }
 
 impl Unit {
@@ -52,7 +69,11 @@ impl Unit {
             UnitType::None => UnitType::None,
         };
 
-        Box::new(Self { coordinates: Point { x: x, y: y }, unit_type: unit_type, prey: prey, speed: 1.0, size: 20.0 })
+        // Set prey based on self's unit type
+        let image: PngImage = get_image(unit_type);
+        let pos: Point = Point { x: x, y: y };
+
+        Box::new(Self { coordinates: pos.clone(), unit_type: unit_type, prey: prey, speed: 1.0, size: 20.0, asset: Asset { pos: pos, size: 20, image} })
     }
 
     /// Runs an update cycle on Unit.
@@ -87,6 +108,8 @@ impl Unit {
 
         self.coordinates.x += dx / length * self.speed * (dt / 1_000_000_000) as f32;
         self.coordinates.y += dy / length * self.speed * (dt / 1_000_000_000) as f32;
+
+        self.asset.pos = self.coordinates.clone(); // Copy new position to Asset
     }
 
     /// Checks if self is overlapping with a predator and switches UnitType if true
@@ -100,7 +123,7 @@ impl Unit {
         }
     }
 
-    /// Converts a unit to a different type
+    /// Converts a unit to a different type.
     pub fn switch_to(&mut self, unit_type: UnitType) {
         match unit_type {
             UnitType::Rock => {
@@ -120,6 +143,7 @@ impl Unit {
                 self.prey = UnitType::None;
             }
         }
+        self.asset.image = get_image(unit_type);
     }
 
     /// Calculate the Euclidian distance to other Unit.
@@ -133,5 +157,15 @@ impl Unit {
             && self.coordinates.x + self.size > other.coordinates.x 
             && self.coordinates.y > other.coordinates.y + self.size
             && self.coordinates.y + self.size < other.coordinates.y
+    }
+}
+
+/// Returns the image for the specified UnitType.
+fn get_image(unit_type: UnitType) -> PngImage {
+    match unit_type {
+        UnitType::Rock => PngImage::load("resources/rock.png").expect("Failed to load rock image!"),
+        UnitType::Paper => PngImage::load("resources/paper.png").expect("Failed to load paper image!"),
+        UnitType::Scissor => PngImage::load("resources/scissor.png").expect("Failed to load scissor image!"),
+        UnitType::None => PngImage::load("resources/warning.png").expect("Failed to load warning image!"),
     }
 }
